@@ -42,6 +42,11 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    VideoCapture video(0);
+
+    video >> src;
+
+
     bilateralFilter(src, img_gray, 9, 301, 301, BORDER_DEFAULT);
     cv::pyrMeanShiftFiltering(src, img_gray, 40, 50, 2);
     cvtColor(img_gray, img_gray, COLOR_RGB2GRAY);
