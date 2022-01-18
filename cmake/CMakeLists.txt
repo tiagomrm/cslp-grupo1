@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.8)
+project( colorFinder )
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+include_directories(../)
+add_executable( colorFinder ../main.cpp )
+target_link_libraries( colorFinder ${OpenCV_LIBS} )
