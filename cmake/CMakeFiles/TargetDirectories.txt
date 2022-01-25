@@ -1,3 +1,0 @@
-/home/vitor/Desktop/CSLP/Projeto/cmake/CMakeFiles/edit_cache.dir
-/home/vitor/Desktop/CSLP/Projeto/cmake/CMakeFiles/rebuild_cache.dir
-/home/vitor/Desktop/CSLP/Projeto/cmake/CMakeFiles/colorFinder.dir

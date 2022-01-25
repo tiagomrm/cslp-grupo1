@@ -5,7 +5,6 @@
 #include <opencv2/photo.hpp>
 #include <opencv2/core/types.hpp>
 
-
 #include "colors.h"
 using namespace cv;
 using namespace std;
@@ -20,10 +19,15 @@ vector<Rect> getContours(Mat m);
 
 int insideRect(vector<Vec3f> circles, vector<Rect> rects);
 
+double f(double x, double slope, double b);
+
+void white_balance(Mat& src, Mat& dst, Mat& mask);
+
 int main(int argc, char** argv)
 {
+    
     // Declare the output variables
-    Mat dst, dst2, th, masked, img_gray, result, end, color, color_seg, grey;
+    Mat dst, dst2, th, masked, img_gray, result, end, color, color_seg, grey, white_balanced;
     const char* default_file = "legos.jpg";
     //default_file = "lego3.png";
     const char* filename = argc >=2 ? argv[1] : default_file;
@@ -42,10 +46,16 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    VideoCapture video(0);
+    //VideoCapture video(0);
 
-    video >> src;
+    //video >> src;
 
+    cvtColor(src, img_gray, COLOR_BGR2GRAY);
+    cv::threshold(img_gray, th, 0, 255, THRESH_TOZERO | THRESH_OTSU);
+
+    white_balance(src, white_balanced, th);
+
+    src = white_balanced;
 
     bilateralFilter(src, img_gray, 9, 301, 301, BORDER_DEFAULT);
     cv::pyrMeanShiftFiltering(src, img_gray, 40, 50, 2);
@@ -63,19 +73,19 @@ int main(int argc, char** argv)
     namedWindow("Original", WINDOW_NORMAL);
     resizeWindow("Original", 1000,1000);
     imshow("Original", src);
-
-    namedWindow("Gaussian Blur", WINDOW_NORMAL);
-    resizeWindow("Gaussian Blur", 1000,1000);
-    imshow("Gaussian Blur", img_gray);
-
-    namedWindow("Threshold", WINDOW_NORMAL);
-    resizeWindow("Threshold", 1000,1000);
-    imshow("Threshold", th);
-
+//
+//    namedWindow("Gaussian Blur", WINDOW_NORMAL);
+//    resizeWindow("Gaussian Blur", 1000,1000);
+//    imshow("Gaussian Blur", img_gray);
+//
+//    namedWindow("Threshold", WINDOW_NORMAL);
+//    resizeWindow("Threshold", 1000,1000);
+//    imshow("Threshold", th);
+//
     namedWindow("Masked", WINDOW_NORMAL);
     resizeWindow("Masked", 1000,1000);
     imshow("Masked", masked);
-
+//
     namedWindow("Mean-Shift Segmentation", WINDOW_NORMAL);
     resizeWindow("Mean-Shift Segmentation", 1000,1000);
     imshow("Mean-Shift Segmentation", dst2);
@@ -88,9 +98,9 @@ int main(int argc, char** argv)
 
     //resize(pins, pins, Size(), scale, scale, INTER_LINEAR);
 
-    namedWindow("denoise", WINDOW_NORMAL);
-    resizeWindow("denoise", 1000,1000);
-    imshow("denoise", pins);
+//    namedWindow("denoise", WINDOW_NORMAL);
+//    resizeWindow("denoise", 1000,1000);
+//    imshow("denoise", pins);
 
 
 
@@ -99,19 +109,19 @@ int main(int argc, char** argv)
     cvtColor(pins, pins, COLOR_HSV2BGR);
 
 
-    Mat dest = Mat::zeros( pins.size(), pins.type() );
-    double alpha = 4; /*< Simple contrast control */
-    int beta = 0;       /*< Simple brightness control */
-    for( int y = 0; y < pins.rows; y++ ) {
-        for( int x = 0; x < pins.cols; x++ ) {
-            for( int c = 0; c < pins.channels(); c++ ) {
-                dest.at<Vec3b>(y,x)[c] =
-                  saturate_cast<uchar>( alpha*pins.at<Vec3b>(y,x)[c] + beta );
-            }
-        }
-    }
-
-    pins = dest;
+//    Mat dest = Mat::zeros( pins.size(), pins.type() );
+//    double alpha = 4; /*< Simple contrast control */
+//    int beta = 0;       /*< Simple brightness control */
+//    for( int y = 0; y < pins.rows; y++ ) {
+//        for( int x = 0; x < pins.cols; x++ ) {
+//            for( int c = 0; c < pins.channels(); c++ ) {
+//                dest.at<Vec3b>(y,x)[c] =
+//                  saturate_cast<uchar>( alpha*pins.at<Vec3b>(y,x)[c] + beta );
+//            }
+//        }
+//    }
+//
+//    pins = dest;
 
 
     cvtColor(pins,src_gray, COLOR_BGR2GRAY);
@@ -177,46 +187,43 @@ int main(int argc, char** argv)
 
     pins = pins(rectangles.at(rect_piece));
 
-    //for(int i = 0; i < circles.size(); i++)
-    //{
-    //    //cout << circles.at(i);
-    //    cout << circles.at(i)[0] << "," << circles.at(i)[1] << endl;
-    //    insideRect(Point2f (circles.at(i)[0], circles.at(i)[1]) , rectangles);
-    //    //insideRect(Point2f (1071, 956), rectangles);
-    //}
-
-    //cout << src.cols;
-    //cout << src.rows;
-
+    Mat other;
+    //dst2 = dst2(rectangles.at(rect_piece));
+    imshow("aaaaaaaa", dst2);
 
     namedWindow("detected circles", WINDOW_NORMAL);
     resizeWindow("detected circles", 1000,1000);
     imshow("detected circles", pins);
 
-
     //Color Detection
     vector<int> maxes;
     int max = 0, index;
+
+
     //-----------
     for(int i = 0; i < colors_names.size() - 1; i++){
-        cv::inRange(
-                dst2,
-                Scalar(colors[i][0] - 5, colors[i][1] / 100 * 0.7 * 255 , colors[i][1] / 100 * 0.7 * 255 + 3 ),
-                //Scalar(colors[i][0] - 15, 0, 5),
-                Scalar(colors[i][0] + 5, colors[i][1] / 100 * 1.3 * 255 , colors[i][1] / 100 * 1.3 * 255 ),
-                //Scalar(colors[i][010] + 15, 100, 95),
-                end);
-        int count = cv::countNonZero(end);
-        if(count >= max) {
-            cout << colors_names[i] << " ( count : " << count << " )" << endl;
-            if (strcmp("Dark Stone Grey", colors_names[i].c_str()) == 0 )
-                grey = end.clone();
-            max = count;
-            index = i;
-            maxes.push_back(i);
-            color = end.clone();
-        }
+            cv::inRange(
+                    dst2,
+                    Scalar(colors[i][0] - 5, colors[i][1] / 100 * 0.7 * 255 , colors[i][1] / 100 * 0.7 * 255 + 3 ),
+                    //Scalar(colors[i][0] - 5, 0 , 1),
+                    //Scalar(colors[i][0] - 15, 0, 5),
+                    Scalar(colors[i][0] + 5, colors[i][1] / 100 * 1.3 * 255 , colors[i][1] / 100 * 1.3 * 255 ),
+                    //Scalar(colors[i][0] + 5, 255, 150 ),
+                    //Scalar(colors[i][010] + 15, 100, 95),
+                    end);
+            int count = cv::countNonZero(end);
+            if(count >= max) {
+                cout << colors_names[i] << " ( count : " << count << " )" << endl;
+                if (strcmp("Dark Stone Grey", colors_names[i].c_str()) == 0 )
+                    grey = end.clone();
+                max = count;
+                index = i;
+                maxes.push_back(i);
+                color = end.clone();
+            }
     }
+
+    imshow("aaa depression", color);
 
     cv::cvtColor(dst2, dst2, COLOR_HSV2BGR);
     imshow("Mean-Shift Segmentation", dst2);
@@ -235,6 +242,7 @@ int main(int argc, char** argv)
     cv::erode(color, color, element);
     cv::dilate(color, color, element);
 
+    //src = src(rectangles.at(rect_piece));
     bitwise_and(src, src, color_seg, color);
 
     cout << "max = " << max << ", index = " << index << endl;
@@ -246,6 +254,76 @@ int main(int argc, char** argv)
         imshow("Grey", grey);
     }
 
+    
+    int dilation_size = 50;
+    Mat dilation_dst;
+    Mat element2 = getStructuringElement( MORPH_CROSS,
+                        Size( 2*dilation_size + 1, 2*dilation_size+1 ),
+                        Point( dilation_size, dilation_size ) );
+    dilate( color_seg, dilation_dst, element2 );
+
+    namedWindow("Final", WINDOW_NORMAL);
+    resizeWindow("Final", 1000,1000);
+    imshow("Final", dilation_dst);
+
+
+    Mat final;
+    vector<vector<Point> > contours2;
+    cvtColor(color_seg, color_seg, COLOR_RGB2GRAY);
+    namedWindow("Final2", WINDOW_NORMAL);
+    resizeWindow("Final2", 1000,1000);
+    imshow("Final2", color_seg);
+    findContours( color_seg, contours2, RETR_TREE, CHAIN_APPROX_SIMPLE );
+    cout << contours2.size() << endl;
+//    for (int i = 0; i< contours2.size(); i++){
+//  
+//        if (i == 0){
+//            continue;
+//        }
+//  
+//
+//        vector<Point> contours_poly;
+//        approxPolyDP( contours2.at(i), contours_poly, 3, true );
+//
+//
+//        drawContours(final, contours_poly, 0, (0, 0, 255), 5);
+//  
+//        Moments mo = moments(contours2.at(i));
+//        
+//
+//
+//        if (mo.m00 != 0.0){
+//            int x = (int)(mo.m10/mo.m00);
+//            int y = (int)(mo.m01/mo.m00);
+//        }
+//
+//        if (contours_poly.size() == 3){
+//            //cv2.putText(img, 'Triangle', (x, y),
+//            //            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+//            cout << "triangle" << endl;
+//        }
+//        else if ( contours_poly.size() == 4){
+//            //cv2.putText(img, 'Quadrilateral', (x, y),
+//            //            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+//            cout << "rectangle" << endl;
+//        }
+//        else if(contours_poly.size() == 5){
+//            //cv2.putText(img, 'Pentagon', (x, y),
+//            //            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+//            cout << "pentagon" << endl;
+//
+//        }
+//        else if (contours_poly.size() == 6){
+//            //putText(img, 'Hexagon', (x, y),
+//            //            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+//            cout << "hexagon" << endl;
+//        }
+//        else{
+//            //putText(img, 'circle', (x, y),
+//            //            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+//            cout << "circle" << endl;
+//        }
+//    }
 
     // Wait and Exit
     waitKeyEx();
@@ -289,35 +367,28 @@ vector<Point2f> getDimensions(vector<Vec3f> circles, int mX, int mY)
     cout << maxY.y << "," << maxY.x << endl;
     double d1 = (minX.y - maxY.y)/(minX.x - maxY.x);
     double d2 = (minX.y - minY.y)/(minX.x - minY.x);
+    double b1 = minX.y - (d1 * minX.x);
+    double b2 = minX.y - (d2 * minX.x);
     double d;
     int l1 = 0, l2 = 0;
     for(int i = 0; i < circles.size(); i++){
-        cout << circles.at(i)[0] << "  " << circles.at(i)[1] << "   "<< circles.at(i)[2] << endl;
-        d = (minX.y - circles.at(i)[1])/(minX.x - circles.at(i)[0]);
-        cout << "declive " << d << endl;
-        if( d > 0 and d <= d1 + 0.01 and d >= d1 - 0.01){
+        int y = f(circles.at(i)[0], d1, b1);
+        if( pow( circles.at(i)[0] - circles.at(i)[0], 2) + pow( y - circles.at(i)[1], 2) < pow( circles.at(i)[2], 2) ){
             l1++;
         }
-        else if(d > 0 and d <= d2 + 0.01 and d >= d2 - 0.01){
-            l2++;
-        }
-        else if(d >= d1 - 0.01 and d <= d1 + 0.01){
-            l1++;
-        }
-        else if(d >= d2 - 0.01 and d <= d2 + 0.01){
+        
+        y = f(circles.at(i)[0], d2, b2);
+        if( pow( circles.at(i)[0] - circles.at(i)[0], 2) + pow( y - circles.at(i)[1], 2) < pow(circles.at(i)[2], 2) ){
             l2++;
         }
     }
 
-    cout << d1 << endl;
-    cout << d2 << endl;
-    cout << l1 << endl;
-    cout << l2 << endl;
-
     return vPoints;
 }
 
-
+double f(double x, double slope, double b){
+    return x * slope + b;
+}
 
 vector<Rect> getContours(Mat m){
     Mat src = m;
@@ -363,4 +434,39 @@ int insideRect(vector<Vec3f> circles, vector<Rect> rects){
         }
     }
     return index;
+}
+
+void white_balance(Mat& src, Mat& dst, Mat& mask) {
+    vector<Mat> imageBGR;
+    split(src, imageBGR);
+    Scalar mean_value = mean(src, mask > 0);
+
+    cout << mean_value << endl;
+
+    double b_transform = 255.0 / mean_value[0];
+    double g_transform = 255.0 / mean_value[1];
+    double r_transform = 255.0 / mean_value[2];
+
+    Mat blue = Mat::zeros(src.rows, src.cols, imageBGR.at(0).type());
+    Mat green = Mat::zeros(src.rows, src.cols, imageBGR.at(0).type());
+    Mat red = Mat::zeros(src.rows, src.cols, imageBGR.at(0).type());
+
+    for(int y = 0; y < src.rows; y++) {
+        for(int x = 0; x < src.cols; x++) {
+            double temp_blue = imageBGR.at(0).at<uchar>(y, x) * b_transform;
+            double temp_green = imageBGR.at(1).at<uchar>(y, x) * g_transform;
+            double temp_red = imageBGR.at(2).at<uchar>(y, x) * r_transform;
+            blue.at<uchar>(y, x) = temp_blue > 255 ? 255 : temp_blue;
+            green.at<uchar>(y, x) = temp_green > 255 ? 255 : temp_green;
+            red.at<uchar>(y, x) = temp_red > 255 ? 255 : temp_red;
+        }
+    }
+
+    vector<Mat> channels;
+
+    channels.push_back(blue);
+    channels.push_back(green);
+    channels.push_back(red);
+
+    merge(channels, dst);
 }
