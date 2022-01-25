@@ -23,6 +23,10 @@ double f(double x, double slope, double b);
 
 void white_balance(Mat& src, Mat& dst, Mat& mask);
 
+ //   putText(src, "color: ", Point(30,30), FONT_HERSHEY_DUPLEX, 0.6, Scalar(0,0,0), 1);
+//    putText(src, max > 0 ? toUpperCase(colors_names[index]) : "Unknown", Point(30,60), FONT_HERSHEY_DUPLEX, 0.8, Scalar(0,0,0), 2);
+//    imshow("original image", src);
+
 int main(int argc, char** argv)
 {
     
