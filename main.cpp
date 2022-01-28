@@ -62,9 +62,10 @@ int main(int argc, char** argv)
     //Convert color from BGR to Gray Scale
     cvtColor(src, img_gray, COLOR_BGR2GRAY);
 
-    //
-    cv::threshold(img_gray, th, 0, 255, THRESH_TOZERO | THRESH_OTSU);
 
+    // calculate the threshold of the brightest pixels
+    cv::threshold(img_gray, th, 0, 255, THRESH_TOZERO | THRESH_OTSU);
+    // apply white balance algorithm to the brightest pixels
     white_balance(src, white_balanced, th);
 
     src = white_balanced;
@@ -144,8 +145,9 @@ int main(int argc, char** argv)
     vector<int> maxes;
     int max = 0, index;
 
-    //-----------
+    // for each color in our list
     for(int i = 0; i < colors_names.size() - 1; i++){
+            // calculate the mask of pixels in range of color
             cv::inRange(
                     dst2,
                     Scalar(colors[i][0] - 5, colors[i][1] / 100 * 0.7 * 255 , colors[i][1] / 100 * 0.7 * 255 + 3 ),
@@ -155,11 +157,12 @@ int main(int argc, char** argv)
                     //Scalar(colors[i][0] + 5, 255, 150 ),
                     //Scalar(colors[i][010] + 15, 100, 95),
                     end);
+
+            // count pixels
             int count = cv::countNonZero(end);
             if(count >= max) {
+                // save most predominant color
                 cout << colors_names[i] << " ( count : " << count << " )" << endl;
-                if (strcmp("Dark Stone Grey", colors_names[i].c_str()) == 0 )
-                    grey = end.clone();
                 max = count;
                 index = i;
                 maxes.push_back(i);
@@ -307,10 +310,13 @@ int insideRect(vector<Vec3f> circles, vector<Rect> rects){
 void white_balance(Mat& src, Mat& dst, Mat& mask) {
     vector<Mat> imageBGR;
     split(src, imageBGR);
+
+    // calculate the mean value for each channel
     Scalar mean_value = mean(src, mask > 0);
 
     cout << mean_value << endl;
 
+    // calculate the linear transformation to bring the mean values to 255
     double b_transform = 255.0 / mean_value[0];
     double g_transform = 255.0 / mean_value[1];
     double r_transform = 255.0 / mean_value[2];
@@ -321,6 +327,7 @@ void white_balance(Mat& src, Mat& dst, Mat& mask) {
 
     for(int y = 0; y < src.rows; y++) {
         for(int x = 0; x < src.cols; x++) {
+            // apply the linear transformation for each channel of current pixel
             double temp_blue = imageBGR.at(0).at<uchar>(y, x) * b_transform;
             double temp_green = imageBGR.at(1).at<uchar>(y, x) * g_transform;
             double temp_red = imageBGR.at(2).at<uchar>(y, x) * r_transform;
@@ -330,6 +337,8 @@ void white_balance(Mat& src, Mat& dst, Mat& mask) {
         }
     }
 
+
+    // merge resulting channels
     vector<Mat> channels;
 
     channels.push_back(blue);
