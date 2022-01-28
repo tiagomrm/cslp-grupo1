@@ -5,7 +5,7 @@
 This project is able to detect an approximation to the color of a Lego Block, based on an official color palette, and 
 it's dimensions (e.g., 2x8) using a camera.
 
-The code was implemented in C++ with the OpenCV library in order to manipulate and capture the frames.
+The code was implemented in C++ with the OpenCV 4 library in order to manipulate and capture the frames.
 
 We did not manage to make the project work very accurately since the environment conditions played such a big part on 
 how the colors and shadows were displayed. Although our approach was to handle this problem algorithmically, a better 
