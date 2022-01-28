@@ -25,7 +25,7 @@ Compile
     ```
     $ g++ main.cpp -o readLego `pkg-config --cflags --libs opencv
     ```
-Execute
+\nExecute
     ```
     $ ./readLego
     ```
