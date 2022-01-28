@@ -20,11 +20,12 @@ This is the guide we used : https://solarianprogrammer.com/2019/09/17/install-op
 
 ## How to run
 To run the program, after having OpenCV library installed:
-    - Compile
+    ## Compile
+    
     ```
     $ g++ main.cpp -o readLego `pkg-config --cflags --libs opencv
     ```
-    - Execute
+    ## Execute
     ```
     $ ./readLego
     ```
